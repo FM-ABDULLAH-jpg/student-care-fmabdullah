@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Student AI Assistant</title>
+<style>
+body { margin:0; font-family:Arial; background:#f0f3f8; }
+.container { width:100%; max-width:600px; margin:auto; padding:20px; }
+.chat-box { height:70vh; background:white; padding:10px; overflow-y:auto; border-radius:10px; box-shadow:0 0 10px #ccc; }
+.msg { margin:10px 0; padding:10px; border-radius:10px; max-width:80%; }
+.user { background:#d1e7ff; margin-left:auto; }
+.bot { background:#e8e8e8; margin-right:auto; }
+.bottom { display:flex; margin-top:10px; }
+input { flex:1; padding:10px; border-radius:5px; border:1px solid #ccc; }
+button { padding:10px 15px; margin-left:5px; border:none; background:#3b82f6; color:white; border-radius:5px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h2>📚 Student AI Helper</h2>
+
+    <div class="chat-box" id="chatBox"></div>
+
+    <div class="bottom">
+        <input id="msg" type="text" placeholder="Write your question...">
+        <input type="file" id="imgInput" accept="image/*">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<script>
+async function sendMessage() {
+    let msg = document.getElementById("msg").value;
+    let imgFile = document.getElementById("imgInput").files[0];
+    let chatBox = document.getElementById("chatBox");
+
+    if (!msg && !imgFile) return;
+
+    if (msg) {
+        chatBox.innerHTML += `<div class="msg user">${msg}</div>`;
+    }
+
+    let imageBase64 = null;
+    if (imgFile) {
+        let reader = new FileReader();
+        reader.onload = async function () {
+            imageBase64 = reader.result.split(",")[1];
+            await sendToServer(msg, imageBase64);
+        };
+        reader.readAsDataURL(imgFile);
+    } else {
+        await sendToServer(msg, null);
+    }
+
+    document.getElementById("msg").value = "";
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+async function sendToServer(msg, img) {
+    let chatBox = document.getElementById("chatBox");
+    chatBox.innerHTML += `<div class="msg bot">⏳ Processing...</div>`;
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    let res = await fetch("api.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: msg, image: img })
+    });
+
+    let data = await res.json();
+    let reply = data.choices[0].message.content;
+
+    document.querySelectorAll(".bot").slice(-1)[0].innerHTML = reply;
+}
+</script>
+
+</body>
+</html>
